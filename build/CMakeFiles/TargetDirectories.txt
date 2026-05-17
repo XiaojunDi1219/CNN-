@@ -1,0 +1,3 @@
+D:/c++/project test/version2_pure_cpp/build/CMakeFiles/cnn_mnist.dir
+D:/c++/project test/version2_pure_cpp/build/CMakeFiles/edit_cache.dir
+D:/c++/project test/version2_pure_cpp/build/CMakeFiles/rebuild_cache.dir
