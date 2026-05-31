@@ -9,9 +9,9 @@
 #include "mnist_reader.hpp"
 
 // ============================================================================
-// MNIST Handwritten Digit Recognition — Pure C++ CNN
-// 5-layer LeNet-5 style network:
-//   C1(1→6, 5×5) → S2(2×2 maxpool) → C3(6→12, 5×5) → S4(2×2 maxpool) → O5(192→10)
+// MNIST 手写数字识别 — 纯 C++ CNN
+// 5 层 LeNet-5 风格网络:
+//   C1(1→6, 5×5) → S2(2×2 最大池化) → C3(6→12, 5×5) → S4(2×2 最大池化) → O5(192→10)
 // ============================================================================
 
 struct TrainingConfig {
@@ -20,8 +20,8 @@ struct TrainingConfig {
     std::string testImages  = "mnist/t10k-images.idx3-ubyte";
     std::string testLabels  = "mnist/t10k-labels.idx1-ubyte";
     int epochs = 1;
-    int trainLimit = 60000;   // Max training samples per epoch
-    int testLimit  = 10000;   // Max test samples
+    int trainLimit = 60000;   // 每 epoch 最大训练样本数
+    int testLimit  = 10000;   // 最大测试样本数
     float initialAlpha = 0.03f;
     float minAlpha = 0.001f;
     bool verbose = true;
@@ -36,27 +36,27 @@ float trainEpoch(CNN<float>& cnn,
     int correct = 0;
 
     for (int n = 0; n < numSamples; ++n) {
-        // Linear learning rate decay
+        // 线性学习率衰减
         float alpha = initialAlpha - (initialAlpha - minAlpha) * n / (numSamples - 1);
 
-        // Forward
+        // 前向传播
         Matrix<float> output = cnn.forward(trainImages[n]);
 
-        // Loss
+        // 损失
         float loss = cnn.computeLoss(output, trainLabels[n]);
         totalLoss += loss;
 
-        // Accuracy tracking
+        // 准确率跟踪
         if (CNN<float>::argmax(output) == CNN<float>::argmax(trainLabels[n]))
             correct++;
 
-        // Backward
+        // 反向传播
         cnn.backward(trainLabels[n]);
 
-        // Update parameters
+        // 更新参数
         cnn.updateParams(alpha);
 
-        // Clear intermediate values for next sample
+        // 清除中间值，为下一个样本做准备
         cnn.clearGradients();
 
         if ((n + 1) % 5000 == 0) {
@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
 
     TrainingConfig cfg;
 
-    // Simple command-line overrides
+    // 简单的命令行参数覆盖
     for (int i = 1; i < argc; ++i) {
         std::string arg(argv[i]);
         if (arg == "--epochs" && i + 1 < argc)
@@ -135,7 +135,7 @@ int main(int argc, char* argv[]) {
             cfg.verbose = false;
     }
 
-    // Load data
+    // 加载数据
     std::cout << "\n[1/4] Loading MNIST dataset..." << std::endl;
     auto t0 = std::chrono::steady_clock::now();
 
@@ -161,12 +161,12 @@ int main(int argc, char* argv[]) {
               << testImages.size() << " test images"
               << " (" << loadMs << " ms)" << std::endl;
 
-    // Clamp to actual data size
+    // 限制在实际数据大小范围内
     int trainN = std::min(cfg.trainLimit, static_cast<int>(trainImages.size()));
     int testN  = std::min(cfg.testLimit,  static_cast<int>(testImages.size()));
     std::cout << "  Using " << trainN << " training, " << testN << " testing" << std::endl;
 
-    // Initialize network
+    // 初始化网络
     std::cout << "\n[2/4] Initializing 5-layer CNN..." << std::endl;
     CNN<float> cnn;
 
@@ -177,7 +177,7 @@ int main(int argc, char* argv[]) {
     std::cout << "    S4: MaxPool 12x8x8  -> 12x4x4   (2x2 window)" << std::endl;
     std::cout << "    O5: FC    192 -> 10  (Affine + Softmax)" << std::endl;
 
-    // Train
+    // 训练
     std::cout << "\n[3/4] Training (" << cfg.epochs << " epoch(s), "
               << trainN << " samples/epoch)..." << std::endl;
     auto t2 = std::chrono::steady_clock::now();
@@ -195,7 +195,7 @@ int main(int argc, char* argv[]) {
     auto trainMs = std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count();
     std::cout << "  Training time: " << (trainMs / 1000.0) << " s" << std::endl;
 
-    // Test
+    // 测试
     std::cout << "\n[4/4] Evaluating on test set (" << testN << " samples)..." << std::endl;
     float accuracy = testEvaluate(cnn, testImages, testLabels, testN);
 

@@ -11,9 +11,9 @@
 #include "loss.hpp"
 
 // ============================================================================
-// FullyConnectedLayer — Affine transform + Softmax activation
-// Input:  multiple feature maps which are flattened into a 1D vector
-// Output: 1 x outputNum probability vector (via Softmax)
+// FullyConnectedLayer — 仿射变换 + Softmax 激活
+// 输入:  多个特征图，被展平为一维向量
+// 输出: 1 x outputNum 概率向量（通过 Softmax）
 // ============================================================================
 template<typename T = float>
 class FullyConnectedLayer : public Layer<T> {
@@ -32,7 +32,7 @@ public:
     const char* name() const override { return "FullyConnectedLayer"; }
 
     std::vector<Matrix<T>> forward(const std::vector<Matrix<T>>& inputs) override {
-        // Flatten all input feature maps into a 1×inputNum_ row vector
+        // 将所有输入特征图展平为 1×inputNum_ 行向量
         Matrix<T> flat(1, inputNum_);
         int idx = 0;
         for (const auto& fm : inputs) {
@@ -42,7 +42,7 @@ public:
         }
         lastFlatInput_ = flat;
 
-        // Affine: v = flat * W^T + b  (W is outputNum_ × inputNum_)
+        // 仿射: v = flat * W^T + b  (W 为 outputNum_ × inputNum_)
         for (int i = 0; i < outputNum_; ++i) {
             T sum = biases_[i];
             for (int j = 0; j < inputNum_; ++j)
@@ -56,22 +56,22 @@ public:
     }
 
     std::vector<Matrix<T>> backward(const std::vector<Matrix<T>>& gradOutput) override {
-        // For cross-entropy + softmax, the combined gradient is (Y - target)
-        // This is computed externally and passed as gradOutput
-        // Store as local gradient
+        // 对于交叉熵 + softmax，合并梯度为 (Y - target)
+        // 该梯度在外部计算并以 gradOutput 形式传入
+        // 存储为局部梯度
         this->gradient_[0] = gradOutput[0];
 
-        // Accumulate weight gradients: dW = d * x^T  (outer product)
+        // 累积权重梯度: dW = d * x^T  (外积)
         for (int i = 0; i < outputNum_; ++i) {
             for (int j = 0; j < inputNum_; ++j) {
                 weightGradients_(i, j) += gradOutput[0].data()[i] * lastFlatInput_.data()[j];
             }
         }
-        // Accumulate bias gradients
+        // 累积偏置梯度
         for (int i = 0; i < outputNum_; ++i)
             biasGradients_[i] += gradOutput[0].data()[i];
 
-        // Compute gradient w.r.t. flat input: d_input = d * W
+        // 计算相对于展平输入的梯度: d_input = d * W
         Matrix<T> gradFlat(1, inputNum_, T(0));
         for (int j = 0; j < inputNum_; ++j) {
             T sum = T(0);
@@ -80,8 +80,8 @@ public:
             gradFlat.data()[j] = sum;
         }
 
-        // Reshape back to feature maps — caller knows the target shape
-        // For now, just return as a single-element vector containing the flat gradient
+        // 重塑回特征图 — 调用者知道目标形状
+        // 目前仅作为包含展平梯度的单元素向量返回
         return { gradFlat };
     }
 
@@ -123,10 +123,10 @@ private:
     int inputNum_, outputNum_;
     Matrix<T> weights_;           // outputNum_ × inputNum_
     std::vector<T> biases_;
-    Matrix<T> v_;                 // pre-activation (logits)
+    Matrix<T> v_;                 // 预激活值 (logits)
     Matrix<T> weightGradients_;   // outputNum_ × inputNum_
     std::vector<T> biasGradients_;
-    Matrix<T> lastFlatInput_;     // stored for backward pass
+    Matrix<T> lastFlatInput_;     // 存储的展平输入，供反向传播使用
 };
 
 #endif // FULLY_CONNECTED_LAYER_HPP

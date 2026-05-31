@@ -6,7 +6,7 @@
 #include "matrix.hpp"
 
 // ============================================================================
-// Loss functions
+// 损失函数
 // ============================================================================
 
 namespace loss {
@@ -26,7 +26,7 @@ T crossEntropy(const Matrix<T>& predicted, const Matrix<T>& target) {
     return loss;
 }
 
-// Gradient of cross-entropy w.r.t. logits (before softmax):
+// 交叉熵对 logits（softmax 之前）的梯度:
 //   dL/d(logits) = softmax(logits) - target  = predicted - target
 template<typename T>
 Matrix<T> crossEntropyGradient(const Matrix<T>& softmaxOutput, const Matrix<T>& target) {

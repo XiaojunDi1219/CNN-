@@ -10,9 +10,9 @@
 enum class PoolType { Max, Avg };
 
 // ============================================================================
-// PoolLayer — 2x2 max-pooling or average-pooling
-// Forward:  downsamples by factor of poolSize (default 2)
-// Backward: upsamples — distributes gradient back to input positions
+// PoolLayer — 2x2 最大池化或平均池化
+// 前向:  按 poolSize 因子下采样（默认 2）
+// 反向: 上采样 — 将梯度分配回输入位置
 // ============================================================================
 template<typename T = float>
 class PoolLayer : public Layer<T> {
@@ -84,11 +84,11 @@ public:
         if (static_cast<int>(gradOutput.size()) != outChannels_)
             throw std::invalid_argument("PoolLayer::backward: wrong grad output channel count");
 
-        // Store local gradient
+        // 存储局部梯度
         for (int ch = 0; ch < outChannels_; ++ch)
             this->gradient_[ch] = gradOutput[ch];
 
-        // Upsample to input size
+        // 上采样到输入尺寸
         std::vector<Matrix<T>> gradInput(inChannels_);
         for (int ch = 0; ch < inChannels_; ++ch) {
             gradInput[ch] = Matrix<T>(inputHeight_, inputWidth_, T(0));
@@ -104,7 +104,7 @@ public:
                         int pr = pos / poolSize_;
                         int pc = pos % poolSize_;
                         gradInput[ch](startR + pr, startC + pc) = gVal;
-                    } else { // Avg: distribute equally
+                    } else { // 平均池化: 均匀分配
                         T avgGrad = gVal / static_cast<T>(poolSize_ * poolSize_);
                         for (int pr = 0; pr < poolSize_; ++pr)
                             for (int pc = 0; pc < poolSize_; ++pc)
@@ -117,7 +117,7 @@ public:
     }
 
     void updateParams(T /*learningRate*/) override {
-        // Pooling layer has no trainable parameters
+        // 池化层没有可训练参数
     }
 
     void clearGradients() override {
@@ -131,7 +131,7 @@ private:
     int inChannels_, outChannels_;
     PoolType poolType_;
     int outputWidth_, outputHeight_;
-    std::vector<Matrix<int>> maxPositions_;  // for max pooling backward
+    std::vector<Matrix<int>> maxPositions_;  // 用于最大池化的反向传播
 };
 
 #endif // POOL_LAYER_HPP

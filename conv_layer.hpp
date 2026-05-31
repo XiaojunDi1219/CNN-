@@ -9,11 +9,11 @@
 #include "matrix.hpp"
 #include "layer.hpp"
 
-// Convolution mode: Valid (no padding, output shrinks by kernel_size-1)
+// 卷积模式: Valid（无填充，输出缩小 kernel_size-1）
 enum class ConvMode { Valid, Full };
 
-// 2D correlation (no kernel rotation) — used in forward pass and kernel gradient
-// Output dimensions depend on mode:
+// 二维互相关（不旋转卷积核）— 用于前向传播和卷积核梯度计算
+// 输出尺寸取决于模式:
 //   Valid: out_rows = in_rows - k_rows + 1, out_cols = in_cols - k_cols + 1
 //   Full:  out_rows = in_rows + k_rows - 1, out_cols = in_cols + k_cols - 1
 template<typename T>
@@ -40,8 +40,8 @@ Matrix<T> correlate2D(const Matrix<T>& input, const Matrix<T>& kernel, ConvMode 
 
     Matrix<T> result(outRows, outCols, T(0));
 
-    // For Full mode, we zero-pad the input
-    // Iterate over output positions
+    // 在 Full 模式下，对输入进行零填充
+    // 遍历输出位置
     for (int or_ = 0; or_ < outRows; ++or_) {
         for (int oc = 0; oc < outCols; ++oc) {
             T sum = T(0);
@@ -60,18 +60,18 @@ Matrix<T> correlate2D(const Matrix<T>& input, const Matrix<T>& kernel, ConvMode 
     return result;
 }
 
-// Convolution (with kernel rotation) — used in backward pass for input gradient
+// 卷积（旋转卷积核）— 用于反向传播中计算输入梯度
 template<typename T>
 Matrix<T> convolve2D(const Matrix<T>& kernel, const Matrix<T>& grad, ConvMode mode) {
-    // Rotate kernel 180 degrees
+    // 将卷积核旋转 180 度
     Matrix<T> rotated = kernel.rotate180();
     return correlate2D(grad, rotated, mode);
 }
 
 // ============================================================================
-// ConvLayer — convolutional layer with ReLU activation
-// Forward:  Y = ReLU( sum_j(input[j] * kernel[i][j]) + bias[i] )
-// Backward: computes grad w.r.t. input and accumulates kernel/bias gradients
+// ConvLayer — 带 ReLU 激活的卷积层
+// 前向:  Y = ReLU( sum_j(input[j] * kernel[i][j]) + bias[i] )
+// 反向: 计算相对于输入的梯度，并累积卷积核/偏置梯度
 // ============================================================================
 template<typename T = float>
 class ConvLayer : public Layer<T> {
@@ -89,7 +89,7 @@ public:
 
         initWeights();
 
-        // Allocate intermediate storage
+        // 分配中间存储
         int outW = outputWidth_, outH = outputHeight_;
         v_.resize(outChannels_, Matrix<T>(outH, outW, T(0)));
         this->output_.resize(outChannels_, Matrix<T>(outH, outW, T(0)));
@@ -110,7 +110,7 @@ public:
                 Matrix<T> corr = correlate2D(inputs[ic], kernels_[ic][oc], ConvMode::Valid);
                 v_[oc] += corr;
             }
-            // Add bias and apply ReLU
+            // 加偏置并应用 ReLU
             for (int r = 0; r < outputHeight_; ++r)
                 for (int c = 0; c < outputWidth_; ++c) {
                     T val = v_[oc](r, c) + biases_[oc];
@@ -125,7 +125,7 @@ public:
         if (static_cast<int>(gradOutput.size()) != outChannels_)
             throw std::invalid_argument("ConvLayer::backward: wrong grad output channel count");
 
-        // Compute local gradient: gradOutput ⊙ ReLU'(output)
+        // 计算局部梯度: gradOutput ⊙ ReLU'(output)
         for (int oc = 0; oc < outChannels_; ++oc) {
             for (int r = 0; r < outputHeight_; ++r) {
                 for (int c = 0; c < outputWidth_; ++c) {
@@ -135,24 +135,24 @@ public:
             }
         }
 
-        // Accumulate kernel gradients
+        // 累积卷积核梯度
         for (int oc = 0; oc < outChannels_; ++oc) {
             for (int ic = 0; ic < inChannels_; ++ic) {
                 // kernelGradient = correlate(input, localGradient, Valid)
-                // Need inputs — stored separately
+                // 需要输入数据 — 已单独存储
                 Matrix<T> kg = correlate2D(lastInputs_[ic], this->gradient_[oc], ConvMode::Valid);
                 kernelGradients_[ic][oc] += kg;
             }
-            // Accumulate bias gradient: sum of local gradient
+            // 累积偏置梯度: 局部梯度之和
             biasGradients_[oc] += this->gradient_[oc].sum();
         }
 
-        // Compute gradient w.r.t. input (to pass to previous layer)
+        // 计算相对于输入的梯度（传递给前一层）
         std::vector<Matrix<T>> gradInput(inChannels_);
         for (int ic = 0; ic < inChannels_; ++ic) {
             gradInput[ic] = Matrix<T>(inputHeight_, inputWidth_, T(0));
             for (int oc = 0; oc < outChannels_; ++oc) {
-                // Full convolution of rotated kernel with local gradient
+                // 旋转后的卷积核与局部梯度的 Full 卷积
                 Matrix<T> contrib = convolve2D(kernels_[ic][oc], this->gradient_[oc], ConvMode::Full);
                 gradInput[ic] += contrib;
             }
@@ -182,7 +182,7 @@ public:
         for (auto& m : this->gradient_) m.setZero();
     }
 
-    // Store inputs for kernel gradient computation in backward pass
+    // 存储输入，供反向传播中计算卷积核梯度使用
     void setLastInputs(const std::vector<Matrix<T>>& inputs) {
         lastInputs_ = inputs;
     }
@@ -217,17 +217,17 @@ private:
     int inChannels_, outChannels_;
     int outputWidth_, outputHeight_;
 
-    // weights
+    // 权重
     std::vector<std::vector<Matrix<T>>> kernels_;  // [inChannel][outChannel]
     std::vector<T> biases_;
 
-    // gradient accumulators
+    // 梯度累积器
     std::vector<std::vector<Matrix<T>>> kernelGradients_;
     std::vector<T> biasGradients_;
 
-    // intermediate values
-    std::vector<Matrix<T>> v_;           // pre-activation values
-    std::vector<Matrix<T>> lastInputs_;  // stored for kernel gradient computation
+    // 中间值
+    std::vector<Matrix<T>> v_;           // 预激活值
+    std::vector<Matrix<T>> lastInputs_;  // 存储的输入，供卷积核梯度计算使用
 };
 
 #endif // CONV_LAYER_HPP

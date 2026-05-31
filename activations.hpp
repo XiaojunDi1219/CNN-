@@ -7,8 +7,8 @@
 #include "matrix.hpp"
 
 // ============================================================================
-// Activation functions — free functions and functors
-// Demonstrates: template functions, callable objects (functors), in-place ops
+// 激活函数 — 自由函数与函数对象
+// 演示：模板函数、可调用对象（函数对象）、原地操作
 // ============================================================================
 
 namespace activation {
@@ -21,11 +21,11 @@ inline T relu(T x) {
 
 template<typename T>
 inline T reluDerivative(T y) {
-    // y is the output of relu: y>0 means the input was >0
+    // y 是 relu 的输出: y>0 表示输入 >0
     return y > T(0) ? T(1) : T(0);
 }
 
-// ReLU functor — callable object
+// ReLU 函数对象 — 可调用对象
 template<typename T>
 struct ReLU {
     Matrix<T> operator()(const Matrix<T>& x) const {
@@ -43,7 +43,7 @@ struct ReLU {
     }
 };
 
-// ---------- Sigmoid (for reference / alternative) ----------
+// ---------- Sigmoid（供参考/备选）----------
 template<typename T>
 inline T sigmoid(T x) {
     return T(1) / (T(1) + std::exp(-x));
@@ -54,16 +54,16 @@ inline T sigmoidDerivative(T y) {
     return y * (T(1) - y);
 }
 
-// ---------- Softmax (operates on a single row vector) ----------
+// ---------- Softmax（作用于单行向量）----------
 template<typename T>
 Matrix<T> softmax(const Matrix<T>& logits) {
-    // logits must be 1 x N
+    // logits 必须是 1 x N
     if (logits.rows() != 1)
         throw std::invalid_argument("softmax expects a 1xN row vector");
 
     Matrix<T> result(1, logits.cols());
 
-    // Find max for numerical stability
+    // 找出最大值以保证数值稳定性
     T maxVal = logits.data()[0];
     for (int i = 1; i < logits.cols(); ++i)
         maxVal = std::max(maxVal, logits.data()[i]);

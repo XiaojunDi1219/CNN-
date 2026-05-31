@@ -13,17 +13,17 @@
 #include <functional>
 
 // ============================================================================
-// Matrix - Custom lightweight matrix class demonstrating:
-//  - RAII: dynamic memory owned by unique_ptr<T[]>, auto-released on destruction
-//  - Move semantics: efficient transfer of ownership
-//  - Operator overloading: natural syntax for arithmetic
-//  - Templates: generic over element type T
-//  - const correctness: separate const/non-const access paths
+// Matrix - 自定义轻量级矩阵类，演示:
+//  - RAII: 动态内存由 unique_ptr<T[]> 管理，析构时自动释放
+//  - 移动语义: 高效的所有权转移
+//  - 运算符重载: 算术运算的自然语法
+//  - 模板: 基于元素类型 T 的泛型
+//  - const 正确性: 分离的 const/非const 访问路径
 // ============================================================================
 template<typename T = float>
 class Matrix {
 public:
-    // ---------- constructors ----------
+    // ---------- 构造函数 ----------
 
     Matrix()
         : rows_(0), cols_(0), size_(0)
@@ -59,7 +59,7 @@ public:
             std::fill_n(data_.get() + n, size_ - n, T(0));
     }
 
-    // copy constructor
+    // 拷贝构造函数
     Matrix(const Matrix& other)
         : rows_(other.rows_), cols_(other.cols_), size_(other.size_)
     {
@@ -69,7 +69,7 @@ public:
         }
     }
 
-    // move constructor (noexcept for STL compatibility)
+    // 移动构造函数（noexcept 以保证 STL 兼容性）
     Matrix(Matrix&& other) noexcept
         : data_(std::move(other.data_))
         , rows_(other.rows_), cols_(other.cols_), size_(other.size_)
@@ -79,7 +79,7 @@ public:
         other.size_ = 0;
     }
 
-    // ---------- assignment operators ----------
+    // ---------- 赋值运算符 ----------
 
     Matrix& operator=(const Matrix& other) {
         if (this != &other) {
@@ -109,7 +109,7 @@ public:
         return *this;
     }
 
-    // ---------- element access ----------
+    // ---------- 元素访问 ----------
 
     T& operator()(int r, int c) {
         return data_[r * cols_ + c];
@@ -122,14 +122,14 @@ public:
     T* data()             { return data_.get(); }
     const T* data() const { return data_.get(); }
 
-    // ---------- dimensions ----------
+    // ---------- 维度 ----------
 
     int rows() const { return rows_; }
     int cols() const { return cols_; }
     int size() const { return size_; }
     bool empty() const { return size_ == 0; }
 
-    // ---------- fill ----------
+    // ---------- 填充 ----------
 
     void fill(T value) {
         std::fill_n(data_.get(), size_, value);
@@ -139,7 +139,7 @@ public:
         std::fill_n(data_.get(), size_, T(0));
     }
 
-    // ---------- in-place arithmetic ----------
+    // ---------- 原地算术运算 ----------
 
     Matrix& operator+=(const Matrix& other) {
         if (rows_ != other.rows_ || cols_ != other.cols_)
@@ -169,7 +169,7 @@ public:
         return *this;
     }
 
-    // ---------- sub-matrix extraction ----------
+    // ---------- 子矩阵提取 ----------
 
     Matrix subMatrix(int startRow, int startCol, int numRows, int numCols) const {
         if (startRow < 0 || startCol < 0 ||
@@ -182,7 +182,7 @@ public:
         return result;
     }
 
-    // ---------- padding ----------
+    // ---------- 填充 ----------
 
     Matrix pad(int topPad, int bottomPad, int leftPad, int rightPad) const {
         Matrix<T> result(rows_ + topPad + bottomPad, cols_ + leftPad + rightPad, T(0));
@@ -192,7 +192,7 @@ public:
         return result;
     }
 
-    // ---------- reshaping ----------
+    // ---------- 重塑 ----------
 
     Matrix reshape(int newRows, int newCols) const {
         if (newRows * newCols != size_)
@@ -202,7 +202,7 @@ public:
         return result;
     }
 
-    // ---------- element-wise operations (static helper style) ----------
+    // ---------- 逐元素运算（静态辅助方法风格）----------
 
     static Matrix elementWiseMultiply(const Matrix& a, const Matrix& b) {
         if (a.rows_ != b.rows_ || a.cols_ != b.cols_)
@@ -217,7 +217,7 @@ public:
         return elementWiseMultiply(*this, other);
     }
 
-    // ---------- sum of all elements ----------
+    // ---------- 所有元素求和 ----------
 
     T sum() const {
         T s = T(0);
@@ -226,7 +226,7 @@ public:
         return s;
     }
 
-    // ---------- sum over rows (return column vector) ----------
+    // ---------- 按行求和（返回列向量）----------
 
     Matrix sumOverRows() const {
         Matrix<T> result(1, cols_, T(0));
@@ -236,7 +236,7 @@ public:
         return result;
     }
 
-    // ---------- apply function element-wise ----------
+    // ---------- 逐元素应用函数 ----------
 
     template<typename Func>
     Matrix apply(Func&& f) const {
@@ -252,7 +252,7 @@ public:
             data_[i] = f(data_[i]);
     }
 
-    // ---------- transpose ----------
+    // ---------- 转置 ----------
 
     Matrix transpose() const {
         Matrix<T> result(cols_, rows_);
@@ -262,7 +262,7 @@ public:
         return result;
     }
 
-    // ---------- rotate 180 degrees ----------
+    // ---------- 旋转 180 度 ----------
 
     Matrix rotate180() const {
         Matrix<T> result(rows_, cols_);
@@ -272,7 +272,7 @@ public:
         return result;
     }
 
-    // ---------- flatten to 1D ----------
+    // ---------- 展平为一维 ----------
 
     Matrix flattenToRowVector() const {
         Matrix<T> result(1, size_);
@@ -280,7 +280,7 @@ public:
         return result;
     }
 
-    // ---------- print (debug) ----------
+    // ---------- 打印（调试）----------
 
     void print(std::ostream& os = std::cout, int maxRows = 5, int maxCols = 8) const {
         os << "Matrix(" << rows_ << "x" << cols_ << ")\n";
@@ -299,13 +299,13 @@ public:
     }
 
 private:
-    std::unique_ptr<T[]> data_;  // RAII-managed buffer
+    std::unique_ptr<T[]> data_;  // RAII 管理的缓冲区
     int rows_;
     int cols_;
     int size_;
 };
 
-// Free-function operator overloads
+// 自由函数运算符重载
 template<typename T>
 Matrix<T> operator+(const Matrix<T>& a, const Matrix<T>& b) {
     Matrix<T> result(a);
